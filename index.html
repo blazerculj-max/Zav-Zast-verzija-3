@@ -309,7 +309,7 @@ const LOGIN_USERNAME = "Test2026";
 const LOGIN_PASSWORD = "TRIS";
 const ADMIN_USERNAME = "ADMIN";
 const ADMIN_PASSWORD = "ADMIN";
-const SHEETS_URL = "https://script.google.com/macros/s/AKfycbwjtNew9MiAWBJACrIQOu-kGc3N31t2QCtYacw9jtYaICyH1miz7_HEefiF2gkKszMyFw/exec";
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbwolSRslGSafWyC-bpWHyPpqOKxuJE9LZtPGnQsKPIVGhUHCpwQDPmzUGP-Igswtt7uCw/exec";
 
 // ── SKLOPI ────────────────────────────────────────────────
 const SECTIONS = [
@@ -464,7 +464,9 @@ function renderList(){
 
 function deleteQuestion(id){
   if(!confirm('Res želite izbrisati to vprašanje?')) return;
-  fetch(SHEETS_URL+'?action=delete&id='+id).then(()=>renderList()).catch(()=>alert('Napaka pri brisanju.'));
+  fetch(SHEETS_URL + '?del=1&id=' + id)
+    .then(() => setTimeout(renderList, 1500))
+    .catch(() => setTimeout(renderList, 1500));
 }
 
 // ── TEST ──────────────────────────────────────────────────
