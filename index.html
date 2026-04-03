@@ -464,9 +464,8 @@ function renderList(){
 
 function deleteQuestion(id){
   if(!confirm('Res želite izbrisati to vprašanje?')) return;
-  fetch(SHEETS_URL + '?del=1&id=' + id)
-    .then(() => setTimeout(renderList, 1500))
-    .catch(() => setTimeout(renderList, 1500));
+  new Image().src = SHEETS_URL + '?del=1&id=' + id + '&t=' + Date.now();
+  setTimeout(renderList, 2000);
 }
 
 // ── TEST ──────────────────────────────────────────────────
