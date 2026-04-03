@@ -196,6 +196,10 @@
     </div>
   </div>
   <div class="main">
+    <div id="name-bar" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 24px;margin-bottom:28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap;">Ime in priimek</label>
+      <input id="candidate-name" type="text" placeholder="Vpišite ime in priimek..." style="flex:1;min-width:200px;background:var(--surface);border:1.5px solid var(--border);border-radius:9px;padding:10px 14px;font-size:15px;font-family:'Source Sans 3',sans-serif;color:var(--text);outline:none;">
+    </div>
     <div id="quiz-form"></div>
     <div class="warn-unanswered" id="warn-unanswered">⚠ Nekatera vprašanja so brez odgovora. Odgovorite na vsa vprašanja pred oddajo.</div>
     <div class="submit-wrap">
@@ -385,7 +389,7 @@ const QUESTIONS = [
   // SKLOP 8 — pranje
   {id:47,section:"pranje",text:"Kdo na področju zavarovalništva izvaja ukrepe za preprečevanje pranja denarja in financiranja terorizma?",options:["Agencija za zavarovalni nadzor in zavarovalnice.","Urad za preprečevanje pranja denarja in zavarovalnice.","Zavarovalnice, zavarovalni zastopniki in zavarovalni posredniki.","Urad za preprečevanja pranja denarja in financiranja terorizma in zavarovalnice."],correct:2},
   {id:48,section:"pranje",text:"Kaj zajema ocena tveganja zavezanca (OTZ)?",options:["Samo tveganja, povezana z distribucijskimi potmi","Samo tveganja, povezana s produkti, storitvami in transakcijami","Samo tveganja, povezana s strankami zavarovalnih pogodb","Celotno zavezančevo poslovanje, v katerem je slednji izpostavljen tveganjem pranja denarja in financiranja terorizma"],correct:3},
-  {id:49,section:"pranje",text:"Kaj ni indikator za pranje denarja pri sklepanju zavarovanja?",options:["Stranka odstopi od ponudbe, ko se zahteva njeno identifikacijo.","Stranka posluje izrecno samo z gotovino.","Istočasno ali v krajšem obdobju ista oseba sklene več življenjskih zavarovanj.","Stranka želi skleniti zavarovanje preko telefona, spleta ali preko pošte."],correct:1},
+  {id:49,section:"pranje",text:"Kaj ni indikator za pranje denarja pri sklepanju zavarovanja?",options:["Stranka odstopi od ponudbe, ko se zahteva njeno identifikacijo.","Stranka posluje izrecno samo z gotovino.","Istočasno ali v krajšem obdobju ista oseba sklene več življenjskih zavarovanj.","Stranka želi skleniti zavarovanje preko telefona, spleta ali preko pošte."],correct:3},
 ];
 
 // ── PRIJAVA ───────────────────────────────────────────────
@@ -524,6 +528,14 @@ function updateProgress(){
 
 function submitTest(){
   const total=activeQuestions.length;
+  const name=document.getElementById('candidate-name').value.trim();
+  if(!name){
+    document.getElementById('candidate-name').style.borderColor='var(--red)';
+    document.getElementById('candidate-name').focus();
+    document.getElementById('candidate-name').placeholder='Vpišite ime in priimek pred oddajo!';
+    return;
+  }
+  document.getElementById('candidate-name').style.borderColor='var(--border)';
   if(Object.keys(answered).length<total){
     document.getElementById('warn-unanswered').style.display='block';
     for(const q of activeQuestions){ if(answered[q.id]===undefined){ document.getElementById('qcard-'+q.id).scrollIntoView({behavior:'smooth',block:'center'}); break; } }
@@ -545,6 +557,31 @@ function submitTest(){
   document.getElementById('overall-label').textContent=pass?'POZITIVNO':'NEGATIVNO';
   document.getElementById('section-results-grid').innerHTML=stats.map(s=>'<div class="section-result-card '+(s.pass?'pass':'fail')+'"><div class="src-status">'+(s.pass?'Pozitivno ✓':'Negativno ✗')+'</div><div class="src-title">'+s.title+'</div><div class="src-range">'+s.correct+' / '+s.total+' pravilnih</div><div class="src-bar-wrap"><div class="src-bar '+(s.pass?'pass':'fail')+'" style="width:'+s.pct+'%"></div></div><div class="src-meta"><div class="src-score">'+s.correct+' / '+s.total+' pravilnih</div><div class="src-pct">'+s.pct+'%</div></div></div>').join('');
   document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+  saveResultsToSheets(name, pct, pass, stats);
+}
+
+function saveResultsToSheets(name, totalPct, totalPass, stats){
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const datum = pad(now.getDate())+'.'+pad(now.getMonth()+1)+'.'+now.getFullYear();
+  const cas = pad(now.getHours())+':'+pad(now.getMinutes());
+
+  // Pošlji kot GET — zanesljivo deluje brez CORS težav
+  let url = SHEETS_URL
+    + '?type=result'
+    + '&ime=' + encodeURIComponent(name)
+    + '&datum=' + encodeURIComponent(datum)
+    + '&cas=' + encodeURIComponent(cas)
+    + '&skupaj_pct=' + totalPct
+    + '&skupaj_status=' + encodeURIComponent(totalPass ? 'POZITIVNO' : 'NEGATIVNO');
+
+  stats.forEach(s => {
+    url += '&sklop_'+s.id+'_tocke=' + encodeURIComponent(s.correct+'/'+s.total);
+    url += '&sklop_'+s.id+'_pct=' + s.pct;
+    url += '&sklop_'+s.id+'_status=' + (s.pass ? 'P' : 'N');
+  });
+
+  fetch(url).catch(()=>{});
 }
 
 function retryTest(){ document.getElementById('btn-submit').disabled=false; document.getElementById('results').style.display='none'; buildQuiz(); window.scrollTo({top:0,behavior:'smooth'}); }
